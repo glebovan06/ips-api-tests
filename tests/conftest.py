@@ -1,3 +1,4 @@
+import uuid
 import pytest
 from src.api_client import PumpApiClient
 
@@ -7,11 +8,13 @@ def api_client() -> PumpApiClient:
     return PumpApiClient()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def valid_pump_id() -> str:
-    return "pump-001"
+    """Генерируем уникальный ID для каждого теста, чтобы изолировать данные"""
+    return f"pump-{uuid.uuid4().hex[:8]}"
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def invalid_pump_id() -> str:
-    return "invalid-pump-999"
+    """Пустая строка — гарантированно невалидный ID"""
+    return ""

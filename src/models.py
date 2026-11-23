@@ -1,26 +1,25 @@
 from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
 
 
 class PumpStatusResponse(BaseModel):
-    is_on: Optional[bool] = None
-    current_glucose_value: Optional[float] = None
-    glucose_level: Optional[str] = None
-    alert_level: Optional[str] = None
-    bolus_status: Optional[str] = None
-    basal_speed_pc: Optional[int] = None
-    manual_action_required: Optional[bool] = None
-    message: Optional[str] = None
-    action_message: Optional[str] = None
+    is_on: bool | None = None
+    current_glucose_value: float | None = None
+    glucose_level: str | None = None
+    alert_level: str | None = None
+    bolus_status: str | None = None
+    basal_speed_pc: int | None = None
+    manual_action_required: bool | None = None
+    message: str | None = None
+    action_message: str | None = None
     alerts_count: int = 0
 
 
 class Alert(BaseModel):
     level: str
-    level_str: str = ""
-    message: str = ""
-    action_message: str = ""
+    level_str: str
+    message: str
+    action_message: str
     timestamp: datetime
 
 

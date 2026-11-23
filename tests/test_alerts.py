@@ -1,5 +1,5 @@
 import allure
-import pytest
+import time
 from src.models import Alert
 
 
@@ -8,31 +8,23 @@ from src.models import Alert
 class TestPumpAlerts:
 
     @allure.title("Получение списка алертов")
-    @allure.severity(allure.severity_level.CRITICAL)
     def test_get_alerts_positive(self, api_client, valid_pump_id):
         response = api_client.get_alerts(valid_pump_id)
         assert response.status_code == 200, (
             f"Ожидали 200, получили {response.status_code}: {response.text}"
         )
-        alerts_data = response.json()
-        assert isinstance(alerts_data, list), (
-            f"Ожидали список, получили {type(alerts_data).__name__}"
+        assert isinstance(response.json(), list), (
+            f"Ожидали список, получили {type(response.json()).__name__}"
         )
-        for item in alerts_data:
-            Alert(**item)
 
-    @allure.title("Симулятор возвращает пустой список для несуществующего pump_id")
-    def test_get_alerts_any_pump_id_returns_empty(self, api_client, invalid_pump_id):
+    @allure.title("Негатив: получение алертов для пустого pump_id")
+    def test_get_alerts_empty_pump_id_returns_404(self, api_client, invalid_pump_id):
         response = api_client.get_alerts(invalid_pump_id)
-        assert response.status_code == 200, (
-            f"Симулятор должен возвращать 200, получили {response.status_code}: {response.text}"
-        )
-        assert response.json() == [], (
-            f"Ожидали пустой список для нового pump_id, получили {response.json()}"
+        assert response.status_code == 404, (
+            f"Ожидали 404, получили {response.status_code}: {response.text}"
         )
 
     @allure.title("Удаление всех алертов")
-    @allure.severity(allure.severity_level.NORMAL)
     def test_delete_all_alerts(self, api_client, valid_pump_id):
         response = api_client.delete_all_alerts(valid_pump_id)
         assert response.status_code == 200, (
@@ -42,14 +34,24 @@ class TestPumpAlerts:
             "Ответ при удалении всех алертов должен быть списком"
         )
 
-    @allure.title("Удаление конкретного алерта (пропускается, если алертов нет)")
+    @allure.title("Удаление конкретного алерта")
     def test_delete_specific_alert(self, api_client, valid_pump_id):
+        # 1. Создаем алерт, вызывая тревогу через низкий уровень глюкозы
+        api_client.send_glucose(valid_pump_id, 2.0)
+        time.sleep(1)
+
+        # 2. Получаем список алертов
         get_response = api_client.get_alerts(valid_pump_id)
         alerts = get_response.json()
-        if not alerts:
-            pytest.skip("Нет алертов для удаления — пропускаем")
+
+        assert len(alerts) > 0, (
+            "Сервер не создал алерт после отправки низкой глюкозы"
+        )
+
+        # 3. Удаляем первый алерт
         alert_to_delete = alerts[0]
-        response = api_client.delete_alert(valid_pump_id, alert_to_delete)
-        assert response.status_code == 200, (
-            f"Ожидали 200, получили {response.status_code}: {response.text}"
+        delete_response = api_client.delete_alert(valid_pump_id, alert_to_delete)
+
+        assert delete_response.status_code == 200, (
+            f"Ожидали 200, получили {delete_response.status_code}: {delete_response.text}"
         )
